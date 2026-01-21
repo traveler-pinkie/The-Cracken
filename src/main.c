@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <openssl/evp.h>
 
 int main(int argc, char *argv[]) {
     char *hash = NULL;
     FILE *wordlist = NULL;
+    char buffer[256];
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len;
+
 
 
     if(argc != 3) {
@@ -37,6 +42,29 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    while(fgets(buffer, sizeof(buffer), wordlist) != NULL){
+        buffer[strcspn(buffer, "\n")] = 0; // Remove newline character
+        
+        EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+        EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);
+        EVP_DigestUpdate(mdctx, buffer, strlen(buffer));
+        EVP_DigestFinal_ex(mdctx, digest, &digest_len);
+        EVP_MD_CTX_free(mdctx);
+        
+        char computed_hash[33];
+        for(int i = 0; i < 16; i++){
+            sprintf(&computed_hash[i*2], "%02x", digest[i]);
+        }
+        computed_hash[32] = 0;
+
+        if(strcasecmp(computed_hash, hash) == 0){
+            printf("Password found: %s\n", buffer);
+            fclose(wordlist);
+            return 0;
+        }
+    }
+
+    printf("Password not found\n");
     fclose(wordlist);
     return 0;
 }
