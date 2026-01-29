@@ -20,29 +20,38 @@ struct threadData {
 };
 
 
-int md5_verify(char *inputBuffer, FILE *filePointer){
-    while(fgets(inputBuffer, sizeof(*inputBuffer), filePointer) != NULL){
-        inputBuffer[strcspn(inputBuffer, "\n")] = 0; // Remove newline character
+    // while(fgets(inputBuffer, sizeof(*inputBuffer), filePointer) != NULL){
+    //     inputBuffer[strcspn(inputBuffer, "\n")] = 0; // Remove newline character
         
-        EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-        EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);
-        EVP_DigestUpdate(mdctx, inputBuffer, strlen(*inputBuffer));
-        EVP_DigestFinal_ex(mdctx, digest, &digest_len);
-        EVP_MD_CTX_free(mdctx);
+    //     EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    //     EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);
+    //     EVP_DigestUpdate(mdctx, inputBuffer, strlen(*inputBuffer));
+    //     EVP_DigestFinal_ex(mdctx, digest, &digest_len);
+    //     EVP_MD_CTX_free(mdctx);
         
-        char computed_hash[33];
-        for(int i = 0; i < 16; i++){
-            sprintf(&computed_hash[i*2], "%02x", digest[i]);
-        }
-        computed_hash[32] = 0;
+    //     char computed_hash[33];
+    //     for(int i = 0; i < 16; i++){
+    //         sprintf(&computed_hash[i*2], "%02x", digest[i]);
+    //     }
+    //     computed_hash[32] = 0;
 
-        if(strcasecmp(computed_hash, hash) == 0){
+    //     if(strcasecmp(computed_hash, hash) == 0){
+    //         printf("Password found: %s\n", inputBuffer);
+    //         fclose(wordlist);
+    //         return 0;
+    //     }
+    // }
+
+int md5_verify(char* candidate, char target){
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    MD5((const unsigned char*)candidate, strlen(*candidate), digest);
+
+    if(strcasecmp(digest, hash) == 0){
             printf("Password found: %s\n", inputBuffer);
             fclose(wordlist);
-            return 0;
-        }
+            return 1;
     }
-
+    return 0;
 }
 
 
@@ -77,7 +86,16 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    md5_verify(buffer, wordlist);
+    while(fgets(buffer, sizeof(buffer), wordlist) != NULL){
+        char* word = buffer[strcspn(buffer, "\n")] = 0;
+        if(md5_verify(word, hash)){
+            printf("Password found: %s\n", buffer);
+            fclose(wordlist);
+            return 1;
+        }
+
+    }
+    
 
 
     }
