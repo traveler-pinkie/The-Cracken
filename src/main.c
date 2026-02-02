@@ -3,12 +3,17 @@
 #include <string.h>
 #include <openssl/evp.h>
 #include <pthread.h>
+#include <stdatomic.h>
+#include "hashes.h"
 
 char *hash = NULL;
 FILE *wordlist = NULL;
 char buffer[256];
 unsigned char digest[EVP_MAX_MD_SIZE];
 unsigned int digest_len;
+unsigned atomic_int hashes_processed_counter = 0;
+unsigned atomic_bool hashes_found_flag = 0;
+unsigned atomic_int words_checked = 0;
 
 struct threadData {
     char *hashString;
