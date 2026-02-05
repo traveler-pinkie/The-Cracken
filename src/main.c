@@ -11,9 +11,11 @@ FILE *wordlist = NULL;
 char buffer[256];
 unsigned char digest[EVP_MAX_MD_SIZE];
 unsigned int digest_len;
-unsigned atomic_int hashes_processed_counter = 0;
-unsigned atomic_bool hashes_found_flag = 0;
-unsigned atomic_int words_checked = 0;
+int num_threads;
+
+atomic_int hashes_processed_counter = 0;
+atomic_bool hashes_found_flag = 0;
+atomic_int words_checked = 0;
 
 struct threadData {
     char *hashString;
@@ -50,17 +52,23 @@ int md5_verify(char* candidate, char* target){
 
 int main(int argc, char *argv[]) {
 
-    if(argc != 3) {
-        printf("Usage: %s <md5_hash> <wordlist_file>\n", argv[0]);
+    if(argc != 4) {
+        printf("Usage: %s <number of threads> <md5_hash> <wordlist_file>\n", argv[0]);
         return 1;
     }
 
     if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
-        printf("Usage: %s <md5_hash> <wordlist_file>\n", argv[0]);
+        printf("Usage: %s <number of threads> <md5_hash> <wordlist_file>\n", argv[0]);
         return 0;
     }else{
-        hash = argv[1];
-        wordlist = fopen(argv[2], "r");
+        hash = argv[2];
+        num_threads = atoi(argv[1]);
+        wordlist = fopen(argv[3], "r");
+    }
+
+    if(num_threads < 1 || num_threads > 128) {
+    printf("Thread count must be between 1 and 128\n");
+    return 1;
     }
 
     if(wordlist == NULL){
