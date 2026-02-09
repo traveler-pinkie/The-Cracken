@@ -8,9 +8,6 @@
 
 char *hash = NULL;
 FILE *wordlist = NULL;
-char buffer[256];
-unsigned char digest[EVP_MAX_MD_SIZE];
-unsigned int digest_len;
 int num_threads;
 
 atomic_int hashes_processed_counter = 0;
@@ -51,7 +48,7 @@ int md5_verify(char* candidate, char* target){
 
 
 int main(int argc, char *argv[]) {
-
+    char buffer[256];
     if(argc != 4) {
         printf("Usage: %s <number of threads> <md5_hash> <wordlist_file>\n", argv[0]);
         return 1;
