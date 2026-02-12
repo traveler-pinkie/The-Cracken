@@ -6,6 +6,8 @@
 #include <stdatomic.h>
 #include "hashes.h"
 
+#define QUEUE_SIZE 1024
+
 char *hash = NULL;
 FILE *wordlist = NULL;
 int num_threads;
@@ -23,6 +25,19 @@ struct threadData {
     char *foundPassword;
 };
 
+typedef struct{
+    char words[QUEUE_SIZE][256];
+    int head;
+    int tail;
+    int count;
+    int done;
+} queue_t;
+
+queue_t queue;
+pthread_mutex_t queue_mutex;
+pthread_mutex_init(&queue_mutex, NULL);
+pthread_cond_t not_empty;
+pthread_cond_t not_full;
 
 int md5_verify(char* candidate, char* target){
     unsigned char digest[EVP_MAX_MD_SIZE];
@@ -84,13 +99,20 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
     while(fgets(buffer, sizeof(buffer), wordlist) != NULL){
+        queue_t *item = malloc(sizeof(queue_t));
+        pthread_mutex_lock(&queue_mutex);
         buffer[strcspn(buffer, "\n")] = '\0'; 
+        item -> words = strdup(buffer);
+        pthread_cond_signal(&not_empty);
+        pthread_mutex_unlock(&queue_mutex);
         if(md5_verify(buffer, hash)){
             printf("Password found: %s\n", buffer);
             fclose(wordlist);
             return 1;
         }
+        free(item);
     }
 
     printf("Password not found\n");
